@@ -51,7 +51,7 @@ jobs:
         echo "compile_status=success" >> $GITHUB_ENV
 
     - name: Upload image to release
-      uses: softprops/action-gh-release@master
+      uses: softprops/action-gh-release@v2.1.0
       if: ${{ env.compile_status == 'success' }} && !cancelled()
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
