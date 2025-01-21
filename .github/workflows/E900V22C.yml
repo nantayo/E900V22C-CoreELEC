@@ -1,0 +1,60 @@
+name: Build CoreELEC for E900V22C
+
+on:
+  workflow_dispatch:
+
+env:
+  REPO_URL: https://github.com/nantayo/E900V22C-CoreELEC
+  TZ: Asia/Shanghai
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@main
+
+    - name: Initialize environment
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        sudo -E apt-get -qq update -y
+        sudo -E apt-get -qq install -y build-essential git texinfo gzip squashfs-tools
+        sudo -E apt-get -qq autoremove --purge
+        sudo -E apt-get -qq clean
+        sudo timedatectl set-timezone "$TZ"
+        sudo mkdir -p /workdir
+        sudo chown $USER:$GROUPS /workdir
+
+    - name: Clone source code
+      working-directory: /workdir
+      run: |
+        git clone $REPO_URL --depth=1 coreelec
+        ln -sf /workdir/coreelec $GITHUB_WORKSPACE/coreelec
+
+    - name: Compile the image
+      run: |
+        cd coreelec
+        chmod -R 755 build.sh
+        ./build.sh
+        echo "FILE_DATE=$(date +"%Y%m%d")" >> $GITHUB_ENV
+        echo "compile_status=success" >> $GITHUB_ENV
+
+    - name: Upload image to release
+      uses: softprops/action-gh-release@v2.1.0
+      if: ${{ env.compile_status == 'success' }} && !cancelled()
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: CoreELEC_E900V22C_${{ env.FILE_DATE }}
+        files: coreelec/*.img.gz
+
+    - name: Delete old releases
+      uses: dev-drprasad/delete-older-releases@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        keep_latest: 1
+        delete_tags : true
+        delete_tag_pattern : E900V22C
