@@ -1,0 +1,1 @@
+原始CoreELEC从[上游](https://github.com/CoreELEC/CoreELEC/releases)获取版本为：21.3-Omega
